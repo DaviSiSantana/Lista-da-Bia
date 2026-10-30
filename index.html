@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Lista da Bia</title>
   
-  <!-- Firebase SDKs compatíveis via CDN -->
+  <!-- SDKs do Firebase -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
@@ -384,8 +384,9 @@
   </div>
 
   <script>
+    // Configuração oficial do Firebase com apiKey verificada
     const firebaseConfig = {
-      apiKey: "AIzaSyCbfjzbcNFE6EEFvG_eh40TjsJ-9E-1mQ",
+      apiKey: "AIzaSyCbfjzbcmNfE6EEFvG_eh40TjsJ-9E-1mQ",
       authDomain: "lista-da-bia.firebaseapp.com",
       projectId: "lista-da-bia",
       storageBucket: "lista-da-bia.firebasestorage.app",
@@ -402,6 +403,7 @@
     let listaAtualId = null;
     let produtoEmEdicao = null;
 
+    // Observador de estado de autenticação
     auth.onAuthStateChanged(async (user) => {
       if (user) {
         currentUser = user;
