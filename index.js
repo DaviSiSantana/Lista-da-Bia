@@ -1,8 +1,685 @@
-import { registerRootComponent } from 'expo';
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Lista da Bia</title>
+  <style>
+    :root {
+      --primary: #D14D5F;
+      --primary-hover: #b83e4e;
+      --secondary: #A8E6CF;
+      --bg-app: #F8F9FA;
+      --card-bg: #FFFFFF;
+      --text-main: #2D3748;
+      --text-muted: #718096;
+      --green: #2ecc71;
+      --orange: #f39c12;
+      --red: #e74c3c;
+    }
 
-import App from './App';
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    
+    body {
+      background-color: #E2E8F0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
 
-// registerRootComponent calls AppRegistry.registerComponent('main', () => App);
-// It also ensures that whether you load the app in Expo Go or in a native build,
-// the environment is set up appropriately
-registerRootComponent(App);
+    /* Moldura móvel centralizada no Desktop e 100% no telemóvel */
+    #app-container {
+      width: 100%;
+      max-width: 440px;
+      height: 100vh;
+      max-height: 900px;
+      background-color: var(--bg-app);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    }
+
+    @media (min-width: 500px) {
+      #app-container { border-radius: 28px; height: 92vh; }
+    }
+
+    .screen {
+      display: none;
+      flex-direction: column;
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+    }
+
+    .screen.active { display: flex; }
+
+    /* Login / Cadastro */
+    .auth-header { text-align: center; margin: 40px 0 25px; }
+    .logo-circle {
+      width: 72px; height: 72px; border-radius: 50%;
+      background: var(--primary); display: inline-flex;
+      align-items: center; justify-content: center; margin-bottom: 12px;
+    }
+    .auth-title { font-size: 26px; font-weight: 700; color: var(--text-main); }
+    .auth-subtitle { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+    .auth-card {
+      background: var(--card-bg); border-radius: 20px; padding: 22px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.04);
+    }
+    .form-group { margin-bottom: 15px; }
+    .form-label { display: block; font-size: 13px; font-weight: 600; color: #4A5568; margin-bottom: 6px; }
+    .form-input {
+      width: 100%; height: 48px; border-radius: 12px; border: 1px solid #E2E8F0;
+      background: #F7FAFC; padding: 0 14px; font-size: 15px; outline: none; transition: 0.2s;
+    }
+    .form-input:focus { border-color: var(--primary); background: #fff; }
+    .btn-main {
+      width: 100%; height: 50px; background: var(--primary); color: #fff;
+      border: none; border-radius: 12px; font-size: 16px; font-weight: 700;
+      cursor: pointer; margin-top: 10px; transition: 0.2s;
+    }
+    .btn-main:hover { background: var(--primary-hover); }
+    .auth-link { text-align: center; margin-top: 16px; font-size: 13px; color: var(--text-muted); cursor: pointer; }
+    .auth-link strong { color: var(--primary); }
+
+    /* Topo do Dashboard */
+    .header-dashboard {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;
+    }
+    .profile-area { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+    .avatar-wrapper { position: relative; width: 50px; height: 50px; }
+    .avatar-circle {
+      width: 50px; height: 50px; border-radius: 50%;
+      background: var(--primary); color: #fff; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden; object-fit: cover; font-size: 18px;
+    }
+    .avatar-badge {
+      position: absolute; bottom: -2px; right: -2px; background: #fff;
+      border-radius: 50%; width: 18px; height: 18px; display: flex;
+      align-items: center; justify-content: center; box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    }
+    .btn-icon { background: none; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
+    /* Cartões & Elementos */
+    .summary-card {
+      background: var(--secondary); border-radius: 18px; padding: 18px;
+      margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+    }
+    .summary-card.dark { background: #2D3748; color: #fff; }
+    .summary-label { font-size: 12px; font-weight: 600; opacity: 0.8; }
+    .summary-value { font-size: 28px; font-weight: 800; margin: 4px 0; }
+    .summary-sub { font-size: 11px; opacity: 0.7; }
+
+    .section-title { font-size: 15px; font-weight: 700; color: var(--text-main); margin: 15px 0 10px; }
+
+    /* Ações Rápidas */
+    .quick-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+    .action-card {
+      background: var(--card-bg); border-radius: 16px; padding: 12px 6px;
+      text-align: center; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+    }
+    .action-icon {
+      width: 44px; height: 44px; border-radius: 22px; margin: 0 auto 6px;
+      display: flex; align-items: center; justify-content: center; background: #FFF5F5;
+    }
+    .action-title { font-size: 11px; font-weight: 600; color: #4A5568; }
+
+    /* Listas & Itens */
+    .item-card {
+      background: var(--card-bg); border-radius: 14px; padding: 14px;
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 10px; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+    }
+    .item-title { font-size: 15px; font-weight: 600; color: var(--text-main); }
+    .item-sub { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
+    .item-checked { text-decoration: line-through; opacity: 0.5; }
+
+    /* Botão Flutuante (FAB) */
+    .fab {
+      position: absolute; bottom: 20px; right: 20px; background: #2D3748;
+      color: #fff; border-radius: 30px; padding: 12px 20px; display: flex;
+      align-items: center; gap: 8px; border: none; font-weight: 700;
+      cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+
+    /* Modais */
+    .modal-overlay {
+      position: absolute; inset: 0; background: rgba(0,0,0,0.5);
+      display: none; align-items: flex-end; z-index: 100;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-body {
+      background: #fff; width: 100%; border-top-left-radius: 24px;
+      border-top-right-radius: 24px; padding: 20px; max-height: 85%;
+      overflow-y: auto; animation: slideUp 0.25s ease-out;
+    }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    .modal-header {
+      display: flex; justify-content: space-between; align-items: center;
+      border-bottom: 1px solid #EDF2F7; padding-bottom: 12px; margin-bottom: 15px;
+    }
+    .badge-cat {
+      display: inline-block; padding: 6px 12px; border-radius: 20px;
+      background: #EDF2F7; font-size: 12px; font-weight: 600; cursor: pointer; margin-right: 6px;
+    }
+    .badge-cat.selected { background: var(--primary); color: #fff; }
+  </style>
+</head>
+<body>
+
+  <div id="app-container">
+    
+    <!-- Input oculto para carregar foto de perfil -->
+    <input type="file" id="file-photo" accept="image/*" style="display: none;" onchange="atualizarFotoPerfil(event)">
+
+    <!-- TELA: LOGIN -->
+    <div id="screen-login" class="screen active">
+      <div class="auth-header">
+        <div class="logo-circle">
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+        </div>
+        <h1 class="auth-title">Lista da Bia</h1>
+        <p class="auth-subtitle">Sua lista de compras, sempre com você</p>
+      </div>
+
+      <div class="auth-card">
+        <div class="form-group">
+          <label class="form-label">E-mail</label>
+          <input type="email" id="login-email" class="form-input" placeholder="seu@email.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Senha</label>
+          <input type="password" id="login-senha" class="form-input" placeholder="Digite sua senha">
+        </div>
+        <button class="btn-main" onclick="acaoLogin()">Entrar</button>
+        <div class="auth-link" onclick="navegarPara('screen-cadastro')">Não tem conta? <strong>Cadastre-se</strong></div>
+      </div>
+    </div>
+
+    <!-- TELA: CADASTRO -->
+    <div id="screen-cadastro" class="screen">
+      <div class="auth-header">
+        <div class="logo-circle">
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+        </div>
+        <h1 class="auth-title">Criar Conta</h1>
+      </div>
+
+      <div class="auth-card">
+        <div class="form-group">
+          <label class="form-label">Nome Completo</label>
+          <input type="text" id="cad-nome" class="form-input" placeholder="Ex: Bia e Davi">
+        </div>
+        <div class="form-group">
+          <label class="form-label">E-mail</label>
+          <input type="email" id="cad-email" class="form-input" placeholder="seu@email.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Senha (Mínimo 6 dígitos)</label>
+          <input type="password" id="cad-senha" class="form-input" placeholder="Defina sua senha">
+        </div>
+        <button class="btn-main" onclick="acaoCadastro()">Cadastrar</button>
+        <div class="auth-link" onclick="navegarPara('screen-login')">Já tem conta? <strong>Fazer Login</strong></div>
+      </div>
+    </div>
+
+    <!-- TELA: DASHBOARD (HOME) -->
+    <div id="screen-home" class="screen">
+      <div class="header-dashboard">
+        <div class="profile-area" onclick="document.getElementById('file-photo').click()" title="Clique para trocar a foto">
+          <div class="avatar-wrapper">
+            <div id="home-avatar" class="avatar-circle">D</div>
+            <div class="avatar-badge">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            </div>
+          </div>
+          <div>
+            <div style="font-size: 11px; color: var(--text-muted);">Bem-vindo de volta,</div>
+            <div id="home-user-name" style="font-size: 16px; font-weight: 700; color: var(--text-main);">Davi</div>
+          </div>
+        </div>
+        <button class="btn-icon" onclick="acaoLogout()" title="Sair">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
+      </div>
+
+      <div class="summary-card">
+        <div class="summary-label">Gasto Total das Listas Ativas</div>
+        <div id="home-total-gasto" class="summary-value">R$ 0,00</div>
+        <div class="summary-sub">Somatório de todos os itens marcados</div>
+      </div>
+
+      <div class="section-title">Ações Rápidas</div>
+      <div class="quick-actions">
+        <div class="action-card" onclick="abrirModalNovaLista()">
+          <div class="action-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/><line x1="12" y1="9" x2="12" y2="15"/><line x1="9" y1="12" x2="15" y2="12"/></svg>
+          </div>
+          <div class="action-title">Nova Lista</div>
+        </div>
+        <div class="action-card" onclick="navegarPara('screen-despensa')">
+          <div class="action-icon" style="background: #FEF3C7;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+          </div>
+          <div class="action-title">Despensa 📦</div>
+        </div>
+        <div class="action-card" onclick="navegarPara('screen-historico')">
+          <div class="action-icon" style="background: #EDF2F7;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4A5568" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <div class="action-title">Histórico</div>
+        </div>
+      </div>
+
+      <div class="section-title">Minhas Listas Ativas</div>
+      <div id="lista-ativas-container" style="padding-bottom: 70px;"></div>
+
+      <button class="fab" onclick="abrirModalNovaLista()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Criar Lista
+      </button>
+    </div>
+
+    <!-- TELA: DETALHE DA LISTA -->
+    <div id="screen-detalhe" class="screen">
+      <div class="header-dashboard">
+        <button class="btn-icon" onclick="navegarPara('screen-home')">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--text-main)" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        </button>
+        <div id="detalhe-titulo" style="font-size: 17px; font-weight: 700; color: var(--text-main);">Minha Lista</div>
+        <button class="btn-main" style="width: auto; height: 34px; padding: 0 12px; margin: 0; font-size: 13px;" onclick="finalizarListaAtual()">Finalizar</button>
+      </div>
+
+      <div class="summary-card dark">
+        <div class="summary-label">Gasto Neste Mercado Atual</div>
+        <div id="detalhe-total" class="summary-value">R$ 0,00</div>
+      </div>
+
+      <div class="section-title">Produtos (Toque para marcar / editar)</div>
+      <div id="detalhe-produtos-container" style="padding-bottom: 70px;"></div>
+
+      <button class="fab" style="background: var(--primary);" onclick="abrirModalNovoProduto()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Novo Produto
+      </button>
+    </div>
+
+    <!-- TELA: DESPENSA -->
+    <div id="screen-despensa" class="screen">
+      <div class="header-dashboard">
+        <button class="btn-icon" onclick="navegarPara('screen-home')">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--text-main)" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        </button>
+        <div style="font-size: 17px; font-weight: 700;">Minha Despensa 📦</div>
+        <div style="width: 26px;"></div>
+      </div>
+      <div id="despensa-container"></div>
+    </div>
+
+    <!-- TELA: HISTÓRICO -->
+    <div id="screen-historico" class="screen">
+      <div class="header-dashboard">
+        <button class="btn-icon" onclick="navegarPara('screen-home')">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--text-main)" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        </button>
+        <div style="font-size: 17px; font-weight: 700;">Histórico de Compras</div>
+        <div style="width: 26px;"></div>
+      </div>
+      <div id="historico-container"></div>
+    </div>
+
+    <!-- MODAL: NOVA LISTA -->
+    <div id="modal-nova-lista" class="modal-overlay">
+      <div class="modal-body">
+        <div class="modal-header">
+          <button class="btn-icon" onclick="fecharModais()">Cancelar</button>
+          <strong>Nova Lista</strong>
+          <button class="btn-icon" style="color: var(--primary); font-weight: 700;" onclick="salvarNovaLista()">Criar</button>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nome da Lista</label>
+          <input type="text" id="nl-nome" class="form-input" placeholder="Ex: Compras do Mês">
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: NOVO PRODUTO -->
+    <div id="modal-novo-produto" class="modal-overlay">
+      <div class="modal-body">
+        <div class="modal-header">
+          <button class="btn-icon" onclick="fecharModais()">Cancelar</button>
+          <strong>Adicionar Produto</strong>
+          <button class="btn-icon" style="color: var(--primary); font-weight: 700;" onclick="salvarNovoProduto()">Adicionar</button>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nome do Produto</label>
+          <input type="text" id="np-nome" class="form-input" placeholder="Ex: Leite Integral">
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <div class="form-group" style="flex: 1;">
+            <label class="form-label">Quantidade</label>
+            <input type="number" id="np-qtd" class="form-input" value="1">
+          </div>
+          <div class="form-group" style="flex: 1;">
+            <label class="form-label">Valor Unitário (R$)</label>
+            <input type="number" step="0.01" id="np-valor" class="form-input" placeholder="0,00">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: EDITAR / REGISTRAR PRODUTO -->
+    <div id="modal-editar-produto" class="modal-overlay">
+      <div class="modal-body">
+        <div class="modal-header">
+          <button class="btn-icon" style="color: var(--red);" onclick="deletarProduto()">Excluir</button>
+          <strong id="edit-prod-titulo">Editar Item</strong>
+          <button class="btn-icon" style="color: var(--primary); font-weight: 700;" onclick="salvarEdicaoProduto()">Confirmar</button>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Quantidade</label>
+          <input type="number" id="edit-qtd" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Preço Pago (R$)</label>
+          <input type="number" step="0.01" id="edit-valor" class="form-input" placeholder="0,00">
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // ESTADO GLOBAL & PERSISTÊNCIA REAL COM LOCALSTORAGE
+    let DB = {
+      users: JSON.parse(localStorage.getItem('bia_users')) || [
+        { email: 'teste@email.com', senha: '123456', nome: 'Davi', foto: null }
+      ],
+      sessao: localStorage.getItem('bia_sessao') || null,
+      listas: JSON.parse(localStorage.getItem('bia_listas')) || [],
+      despensa: JSON.parse(localStorage.getItem('bia_despensa')) || [],
+      historico: JSON.parse(localStorage.getItem('bia_historico')) || []
+    };
+
+    let listaAtualId = null;
+    let produtoEmEdicao = null;
+
+    function persistir() {
+      localStorage.setItem('bia_users', JSON.stringify(DB.users));
+      localStorage.setItem('bia_sessao', DB.sessao || '');
+      localStorage.setItem('bia_listas', JSON.stringify(DB.listas));
+      localStorage.setItem('bia_despensa', JSON.stringify(DB.despensa));
+      localStorage.setItem('bia_historico', JSON.stringify(DB.historico));
+    }
+
+    function navegarPara(screenId) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById(screenId).classList.add('active');
+      if (screenId === 'screen-home') renderizarHome();
+      if (screenId === 'screen-despensa') renderizarDespensa();
+      if (screenId === 'screen-historico') renderizarHistorico();
+    }
+
+    // AUTENTICAÇÃO REAL
+    function acaoLogin() {
+      const email = document.getElementById('login-email').value.trim();
+      const senha = document.getElementById('login-senha').value.trim();
+      const user = DB.users.find(u => u.email === email && u.senha === senha);
+      if (!user) { alert('E-mail ou senha incorretos!'); return; }
+      DB.sessao = user.email;
+      persistir();
+      navegarPara('screen-home');
+    }
+
+    function acaoCadastro() {
+      const nome = document.getElementById('cad-nome').value.trim();
+      const email = document.getElementById('cad-email').value.trim();
+      const senha = document.getElementById('cad-senha').value.trim();
+      if (!nome || !email || !senha) { alert('Preencha todos os campos!'); return; }
+      if (DB.users.some(u => u.email === email)) { alert('E-mail já cadastrado!'); return; }
+      DB.users.push({ nome, email, senha, foto: null });
+      DB.sessao = email;
+      persistir();
+      alert('Conta criada com sucesso!');
+      navegarPara('screen-home');
+    }
+
+    function acaoLogout() {
+      DB.sessao = null;
+      persistir();
+      navegarPara('screen-login');
+    }
+
+    function obterUsuarioLogado() {
+      return DB.users.find(u => u.email === DB.sessao) || { nome: 'Davi', email: 'davi@email.com', foto: null };
+    }
+
+    // FOTO DE PERFIL
+    function atualizarFotoPerfil(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const fotoBase64 = evt.target.result;
+        const user = obterUsuarioLogado();
+        user.foto = fotoBase64;
+        persistir();
+        renderizarHome();
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // DASHBOARD
+    function renderizarHome() {
+      const user = obterUsuarioLogado();
+      document.getElementById('home-user-name').innerText = user.nome;
+      const avatarEl = document.getElementById('home-avatar');
+      if (user.foto) {
+        avatarEl.innerHTML = `<img src="${user.foto}" style="width:100%; height:100%; object-fit:cover;">`;
+      } else {
+        avatarEl.innerText = user.nome.charAt(0).toUpperCase();
+      }
+
+      // Total Gasto
+      let total = 0;
+      DB.listas.forEach(l => {
+        l.produtos.forEach(p => { if (p.comprado) total += p.qtd * p.valor; });
+      });
+      document.getElementById('home-total-gasto').innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
+
+      // Listar Listas Ativas
+      const container = document.getElementById('lista-ativas-container');
+      if (DB.listas.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding:30px; color:#aaa; font-size:13px;">Nenhuma lista ativa encontrada.</div>`;
+        return;
+      }
+      container.innerHTML = DB.listas.map(l => {
+        let subtotal = l.produtos.reduce((acc, p) => acc + (p.comprado ? p.qtd * p.valor : 0), 0);
+        return `
+          <div class="item-card" onclick="abrirLista('${l.id}')">
+            <div>
+              <div class="item-title">${l.titulo}</div>
+              <div class="item-sub">${l.produtos.length} itens</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-weight:700; color:var(--text-main);">R$ ${subtotal.toFixed(2).replace('.', ',')}</div>
+              <div style="font-size:11px; color:var(--orange); font-weight:600;">Em aberto</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // LISTAS
+    function abrirModalNovaLista() { document.getElementById('modal-nova-lista').classList.add('active'); }
+    function fecharModais() { document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active')); }
+
+    function salvarNovaLista() {
+      const nome = document.getElementById('nl-nome').value.trim();
+      if (!nome) return;
+      const nova = { id: Date.now().toString(), titulo: nome, produtos: [] };
+      DB.listas.unshift(nova);
+      persistir();
+      document.getElementById('nl-nome').value = '';
+      fecharModais();
+      abrirLista(nova.id);
+    }
+
+    function abrirLista(id) {
+      listaAtualId = id;
+      const lista = DB.listas.find(l => l.id === id);
+      document.getElementById('detalhe-titulo').innerText = lista.titulo;
+      renderizarProdutosDaLista();
+      navegarPara('screen-detalhe');
+    }
+
+    function renderizarProdutosDaLista() {
+      const lista = DB.listas.find(l => l.id === listaAtualId);
+      const container = document.getElementById('detalhe-produtos-container');
+      let total = 0;
+
+      if (!lista || lista.produtos.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding:30px; color:#aaa; font-size:13px;">Nenhum produto cadastrado.</div>`;
+        document.getElementById('detalhe-total').innerText = 'R$ 0,00';
+        return;
+      }
+
+      container.innerHTML = lista.produtos.map((p, idx) => {
+        if (p.comprado) total += p.qtd * p.valor;
+        return `
+          <div class="item-card" onclick="abrirEdicaoProduto(${idx})">
+            <div>
+              <div class="item-title ${p.comprado ? 'item-checked' : ''}">${p.nome}</div>
+              <div class="item-sub">${p.qtd}x R$ ${p.valor.toFixed(2).replace('.', ',')}</div>
+            </div>
+            <div style="font-weight:700;">R$ ${(p.qtd * p.valor).toFixed(2).replace('.', ',')}</div>
+          </div>
+        `;
+      }).join('');
+
+      document.getElementById('detalhe-total').innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
+    }
+
+    function abrirModalNovoProduto() { document.getElementById('modal-novo-produto').classList.add('active'); }
+
+    function salvarNovoProduto() {
+      const nome = document.getElementById('np-nome').value.trim();
+      const qtd = parseInt(document.getElementById('np-qtd').value) || 1;
+      const valor = parseFloat(document.getElementById('np-valor').value) || 0;
+      if (!nome) return;
+
+      const lista = DB.listas.find(l => l.id === listaAtualId);
+      lista.produtos.push({ nome, qtd, valor, comprado: valor > 0 });
+      persistir();
+      document.getElementById('np-nome').value = '';
+      document.getElementById('np-valor').value = '';
+      fecharModais();
+      renderizarProdutosDaLista();
+    }
+
+    function abrirEdicaoProduto(idx) {
+      produtoEmEdicao = idx;
+      const lista = DB.listas.find(l => l.id === listaAtualId);
+      const p = lista.produtos[idx];
+      document.getElementById('edit-prod-titulo').innerText = p.nome;
+      document.getElementById('edit-qtd').value = p.qtd;
+      document.getElementById('edit-valor').value = p.valor || '';
+      document.getElementById('modal-editar-produto').classList.add('active');
+    }
+
+    function salvarEdicaoProduto() {
+      const lista = DB.listas.find(l => l.id === listaAtualId);
+      const qtd = parseInt(document.getElementById('edit-qtd').value) || 1;
+      const valor = parseFloat(document.getElementById('edit-valor').value) || 0;
+      lista.produtos[produtoEmEdicao].qtd = qtd;
+      lista.produtos[produtoEmEdicao].valor = valor;
+      lista.produtos[produtoEmEdicao].comprado = valor > 0;
+      persistir();
+      fecharModais();
+      renderizarProdutosDaLista();
+    }
+
+    function deletarProduto() {
+      const lista = DB.listas.find(l => l.id === listaAtualId);
+      lista.produtos.splice(produtoEmEdicao, 1);
+      persistir();
+      fecharModais();
+      renderizarProdutosDaLista();
+    }
+
+    function finalizarListaAtual() {
+      const listaIdx = DB.listas.findIndex(l => l.id === listaAtualId);
+      const lista = DB.listas[listaIdx];
+      
+      // Move comprados para a Despensa
+      lista.produtos.forEach(p => {
+        if (p.comprado) {
+          const item = DB.despensa.find(d => d.nome.toLowerCase() === p.nome.toLowerCase());
+          if (item) item.qtd += p.qtd;
+          else DB.despensa.push({ nome: p.nome, qtd: p.qtd });
+        }
+      });
+
+      DB.historico.unshift(lista);
+      DB.listas.splice(listaIdx, 1);
+      persistir();
+      alert('Lista finalizada e guardada na Despensa e no Histórico!');
+      navegarPara('screen-home');
+    }
+
+    // DESPENSA
+    function renderizarDespensa() {
+      const container = document.getElementById('despensa-container');
+      if (DB.despensa.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding:30px; color:#aaa; font-size:13px;">Despensa vazia!</div>`;
+        return;
+      }
+      container.innerHTML = DB.despensa.map((d, idx) => `
+        <div class="item-card">
+          <div class="item-title">${d.nome}</div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <button class="btn-icon" style="background:#EDF2F7; border-radius:8px; width:28px; height:28px;" onclick="alterarQtdDespensa(${idx}, -1)">-</button>
+            <span style="font-weight:700; min-width:24px; text-align:center;">${d.qtd}</span>
+            <button class="btn-icon" style="background:#EDF2F7; border-radius:8px; width:28px; height:28px;" onclick="alterarQtdDespensa(${idx}, 1)">+</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function alterarQtdDespensa(idx, delta) {
+      DB.despensa[idx].qtd += delta;
+      if (DB.despensa[idx].qtd <= 0) DB.despensa.splice(idx, 1);
+      persistir();
+      renderizarDespensa();
+    }
+
+    // HISTÓRICO
+    function renderizarHistorico() {
+      const container = document.getElementById('historico-container');
+      if (DB.historico.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding:30px; color:#aaa; font-size:13px;">Nenhum histórico anterior.</div>`;
+        return;
+      }
+      container.innerHTML = DB.historico.map(h => {
+        let total = h.produtos.reduce((acc, p) => acc + (p.comprado ? p.qtd * p.valor : 0), 0);
+        return `
+          <div class="item-card" style="border-left: 4px solid var(--green);">
+            <div>
+              <div class="item-title">${h.titulo}</div>
+              <div class="item-sub">${h.produtos.length} itens</div>
+            </div>
+            <div style="font-weight:700; color:var(--green);">R$ ${total.toFixed(2).replace('.', ',')}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // INICIALIZAÇÃO
+    if (DB.sessao) navegarPara('screen-home');
+  </script>
+</body>
+</html>
