@@ -380,6 +380,24 @@
       </div>
     </div>
 
+    <!-- MODAL: REFAZER COMPRA (RENOMEAR) -->
+    <div id="modal-refazer-compra" class="modal-overlay">
+      <div class="modal-body">
+        <div class="modal-header">
+          <button class="btn-icon" onclick="fecharModais()">Cancelar</button>
+          <strong>Refazer Compra</strong>
+          <button class="btn-icon" style="color: var(--primary); font-weight: 700;" onclick="confirmarRefazerCompra()">Criar Lista</button>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nome da Nova Lista</label>
+          <input type="text" id="refazer-nome" class="form-input" placeholder="Ex: Compras do Mês">
+        </div>
+        <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">
+          Todos os produtos desta compra serão incluídos na nova lista com as quantidades originais e os valores zerados.
+        </p>
+      </div>
+    </div>
+
     <!-- MODAL: NOVO PRODUTO -->
     <div id="modal-novo-produto" class="modal-overlay">
       <div class="modal-body">
@@ -444,6 +462,7 @@
     let userData = { nome: '', foto: null, listas: [], despensa: [], historico: [] };
     let listaAtualId = null;
     let produtoEmEdicao = null;
+    let historicoIdxParaRefazer = null;
 
     auth.onAuthStateChanged(async (user) => {
       if (user) {
@@ -574,7 +593,6 @@
       reader.readAsDataURL(file);
     }
 
-    // Modal de Visualização do Perfil
     function abrirModalPerfil() {
       if (!currentUser) return;
       document.getElementById('perfil-nome').innerText = userData.nome || currentUser.displayName || 'Usuário';
@@ -733,9 +751,16 @@
       renderizarProdutosDaLista();
     }
 
+    // Finalizar com gravação de data e hora
     function finalizarListaAtual() {
       const listaIdx = userData.listas.findIndex(l => l.id === listaAtualId);
       const lista = userData.listas[listaIdx];
+
+      // Gravar data e hora da finalização
+      const agora = new Date();
+      const dataStr = agora.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      const horaStr = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      lista.dataFinalizada = `${dataStr} às ${horaStr}`;
 
       userData.despensa = userData.despensa || [];
       (lista.produtos || []).forEach(p => {
@@ -779,6 +804,7 @@
       renderizarDespensa();
     }
 
+    // Histórico exibindo data formatada
     function renderizarHistorico() {
       const container = document.getElementById('historico-container');
       if (!userData.historico || userData.historico.length === 0) {
@@ -789,10 +815,13 @@
         let total = (h.produtos || []).reduce((acc, p) => acc + (p.comprado ? p.qtd * p.valor : 0), 0);
         return `
           <div class="item-card" style="border-left: 4px solid var(--green); display: flex; flex-direction: column; align-items: stretch; gap: 12px;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
               <div>
                 <div class="item-title">${h.titulo}</div>
                 <div class="item-sub">${(h.produtos || []).length} itens comprados</div>
+                <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px; display: flex; align-items: center; gap: 4px;">
+                  📅 ${h.dataFinalizada || 'Concluída anteriormente'}
+                </div>
               </div>
               <div style="text-align: right;">
                 <div style="font-size: 11px; color: var(--text-muted);">Total pago</div>
@@ -800,7 +829,7 @@
               </div>
             </div>
             <div style="display: flex; justify-content: flex-end; border-top: 1px solid #EDF2F7; padding-top: 10px;">
-              <button class="btn-main" style="width: auto; height: 36px; padding: 0 16px; margin: 0; font-size: 13px; background: #2D3748; display: flex; align-items: center; gap: 6px;" onclick="refazerCompra(${idx})">
+              <button class="btn-main" style="width: auto; height: 36px; padding: 0 16px; margin: 0; font-size: 13px; background: #2D3748; display: flex; align-items: center; gap: 6px;" onclick="iniciarRefazerCompra(${idx})">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
                 Refazer Compra
               </button>
@@ -810,13 +839,25 @@
       }).join('');
     }
 
-    function refazerCompra(idx) {
+    // Modal para renomear e refazer
+    function iniciarRefazerCompra(idx) {
+      historicoIdxParaRefazer = idx;
       const h = userData.historico[idx];
       if (!h) return;
+      document.getElementById('refazer-nome').value = `${h.titulo} (Nova)`;
+      document.getElementById('modal-refazer-compra').classList.add('active');
+    }
+
+    function confirmarRefazerCompra() {
+      if (historicoIdxParaRefazer === null) return;
+      const h = userData.historico[historicoIdxParaRefazer];
+      if (!h) return;
+
+      const nomeCustomizado = document.getElementById('refazer-nome').value.trim() || `${h.titulo} (Nova)`;
 
       const nova = {
         id: Date.now().toString(),
-        titulo: `${h.titulo} (Nova)`,
+        titulo: nomeCustomizado,
         produtos: (h.produtos || []).map(p => ({
           nome: p.nome,
           qtd: p.qtd || 1,
@@ -828,7 +869,7 @@
       userData.listas = userData.listas || [];
       userData.listas.unshift(nova);
       persistirDados();
-      alert(`Lista "${nova.titulo}" criada com todos os itens zerados para uma nova compra!`);
+      fecharModais();
       abrirLista(nova.id);
     }
   </script>
