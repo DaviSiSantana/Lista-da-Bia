@@ -132,7 +132,7 @@
     .item-card {
       background: var(--card-bg); border-radius: 14px; padding: 14px;
       display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: 10px; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+      margin-bottom: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.03);
     }
     .item-title { font-size: 15px; font-weight: 600; color: var(--text-main); }
     .item-sub { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
@@ -222,7 +222,7 @@
     <!-- TELA: DASHBOARD (HOME) -->
     <div id="screen-home" class="screen">
       <div class="header-dashboard">
-        <div class="profile-area" onclick="document.getElementById('file-photo').click()" title="Clique para trocar a foto">
+        <div class="profile-area" onclick="abrirModalPerfil()" title="Ver Perfil">
           <div class="avatar-wrapper">
             <div id="home-avatar" class="avatar-circle">D</div>
             <div class="avatar-badge">
@@ -324,7 +324,48 @@
       <div id="historico-container"></div>
     </div>
 
-    <!-- MODAIS -->
+    <!-- MODAL: VISUALIZAR PERFIL -->
+    <div id="modal-perfil" class="modal-overlay">
+      <div class="modal-body" style="text-align: center;">
+        <div class="modal-header">
+          <span style="width: 24px;"></span>
+          <strong>Meu Perfil</strong>
+          <button class="btn-icon" style="font-weight: 700; color: var(--primary);" onclick="fecharModais()">Fechar</button>
+        </div>
+
+        <div style="position: relative; width: 100px; height: 100px; margin: 15px auto 10px;">
+          <div id="perfil-avatar-preview" class="avatar-circle" style="width: 100px; height: 100px; font-size: 38px; box-shadow: 0 4px 15px rgba(0,0,0,0.12);">D</div>
+          <button class="btn-icon" onclick="document.getElementById('file-photo').click()" style="position: absolute; bottom: 0; right: 0; background: var(--primary); color: white; border-radius: 50%; width: 32px; height: 32px; box-shadow: 0 2px 6px rgba(0,0,0,0.25);" title="Alterar Foto">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          </button>
+        </div>
+
+        <button class="btn-icon" style="color: var(--primary); font-size: 13px; font-weight: 600; margin: 0 auto 20px;" onclick="document.getElementById('file-photo').click()">
+          📷 Alterar foto de perfil
+        </button>
+
+        <div style="background: #F7FAFC; border-radius: 16px; padding: 16px; text-align: left; display: flex; flex-direction: column; gap: 12px; border: 1px solid #EDF2F7;">
+          <div>
+            <div style="font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Nome</div>
+            <div id="perfil-nome" style="font-size: 16px; font-weight: 700; color: var(--text-main); margin-top: 2px;">Davi</div>
+          </div>
+          <div style="border-top: 1px solid #EDF2F7; padding-top: 10px;">
+            <div style="font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">E-mail</div>
+            <div id="perfil-email" style="font-size: 14px; font-weight: 600; color: var(--text-main); margin-top: 2px;">...</div>
+          </div>
+          <div style="border-top: 1px solid #EDF2F7; padding-top: 10px;">
+            <div style="font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Data de criação da conta</div>
+            <div id="perfil-data" style="font-size: 14px; font-weight: 600; color: var(--text-main); margin-top: 2px;">...</div>
+          </div>
+        </div>
+
+        <button class="btn-main" style="background: #EDF2F7; color: var(--red); margin-top: 18px;" onclick="fecharModais(); acaoLogout();">
+          Sair da Conta
+        </button>
+      </div>
+    </div>
+
+    <!-- MODAL: NOVA LISTA -->
     <div id="modal-nova-lista" class="modal-overlay">
       <div class="modal-body">
         <div class="modal-header">
@@ -339,6 +380,7 @@
       </div>
     </div>
 
+    <!-- MODAL: NOVO PRODUTO -->
     <div id="modal-novo-produto" class="modal-overlay">
       <div class="modal-body">
         <div class="modal-header">
@@ -363,6 +405,7 @@
       </div>
     </div>
 
+    <!-- MODAL: EDITAR PRODUTO -->
     <div id="modal-editar-produto" class="modal-overlay">
       <div class="modal-body">
         <div class="modal-header">
@@ -384,7 +427,6 @@
   </div>
 
   <script>
-    // Configuração oficial do Firebase com apiKey verificada
     const firebaseConfig = {
       apiKey: "AIzaSyCbfjzbcmNfE6EEFvG_eh40TjsJ-9E-1mQ",
       authDomain: "lista-da-bia.firebaseapp.com",
@@ -403,7 +445,6 @@
     let listaAtualId = null;
     let produtoEmEdicao = null;
 
-    // Observador de estado de autenticação
     auth.onAuthStateChanged(async (user) => {
       if (user) {
         currentUser = user;
@@ -522,10 +563,38 @@
           userData.foto = fotoBase64;
           persistirDados();
           renderizarHome();
+
+          const previewEl = document.getElementById('perfil-avatar-preview');
+          if (previewEl) {
+            previewEl.innerHTML = `<img src="${fotoBase64}" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">`;
+          }
         };
         img.src = evt.target.result;
       };
       reader.readAsDataURL(file);
+    }
+
+    // Modal de Visualização do Perfil
+    function abrirModalPerfil() {
+      if (!currentUser) return;
+      document.getElementById('perfil-nome').innerText = userData.nome || currentUser.displayName || 'Usuário';
+      document.getElementById('perfil-email').innerText = currentUser.email || 'Não informado';
+
+      let dataCriacao = 'Recente';
+      if (currentUser.metadata && currentUser.metadata.creationTime) {
+        const d = new Date(currentUser.metadata.creationTime);
+        dataCriacao = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      }
+      document.getElementById('perfil-data').innerText = dataCriacao;
+
+      const previewEl = document.getElementById('perfil-avatar-preview');
+      if (userData.foto) {
+        previewEl.innerHTML = `<img src="${userData.foto}" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">`;
+      } else {
+        previewEl.innerText = (userData.nome || 'D').charAt(0).toUpperCase();
+      }
+
+      document.getElementById('modal-perfil').classList.add('active');
     }
 
     function renderizarHome() {
@@ -552,7 +621,7 @@
       container.innerHTML = userData.listas.map(l => {
         let subtotal = (l.produtos || []).reduce((acc, p) => acc + (p.comprado ? p.qtd * p.valor : 0), 0);
         return `
-          <div class="item-card" onclick="abrirLista('${l.id}')">
+          <div class="item-card" onclick="abrirLista('${l.id}')" style="cursor: pointer;">
             <div>
               <div class="item-title">${l.titulo}</div>
               <div class="item-sub">${(l.produtos || []).length} itens</div>
@@ -603,7 +672,7 @@
       container.innerHTML = lista.produtos.map((p, idx) => {
         if (p.comprado) total += p.qtd * p.valor;
         return `
-          <div class="item-card" onclick="abrirEdicaoProduto(${idx})">
+          <div class="item-card" onclick="abrirEdicaoProduto(${idx})" style="cursor: pointer;">
             <div>
               <div class="item-title ${p.comprado ? 'item-checked' : ''}">${p.nome}</div>
               <div class="item-sub">${p.qtd}x R$ ${p.valor.toFixed(2).replace('.', ',')}</div>
@@ -716,18 +785,51 @@
         container.innerHTML = `<div style="text-align:center; padding:30px; color:#aaa; font-size:13px;">Nenhum histórico registrado.</div>`;
         return;
       }
-      container.innerHTML = userData.historico.map(h => {
+      container.innerHTML = userData.historico.map((h, idx) => {
         let total = (h.produtos || []).reduce((acc, p) => acc + (p.comprado ? p.qtd * p.valor : 0), 0);
         return `
-          <div class="item-card" style="border-left: 4px solid var(--green);">
-            <div>
-              <div class="item-title">${h.titulo}</div>
-              <div class="item-sub">${(h.produtos || []).length} itens</div>
+          <div class="item-card" style="border-left: 4px solid var(--green); display: flex; flex-direction: column; align-items: stretch; gap: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div class="item-title">${h.titulo}</div>
+                <div class="item-sub">${(h.produtos || []).length} itens comprados</div>
+              </div>
+              <div style="text-align: right;">
+                <div style="font-size: 11px; color: var(--text-muted);">Total pago</div>
+                <div style="font-weight: 700; color: var(--green); font-size: 16px;">R$ ${total.toFixed(2).replace('.', ',')}</div>
+              </div>
             </div>
-            <div style="font-weight:700; color:var(--green);">R$ ${total.toFixed(2).replace('.', ',')}</div>
+            <div style="display: flex; justify-content: flex-end; border-top: 1px solid #EDF2F7; padding-top: 10px;">
+              <button class="btn-main" style="width: auto; height: 36px; padding: 0 16px; margin: 0; font-size: 13px; background: #2D3748; display: flex; align-items: center; gap: 6px;" onclick="refazerCompra(${idx})">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                Refazer Compra
+              </button>
+            </div>
           </div>
         `;
       }).join('');
+    }
+
+    function refazerCompra(idx) {
+      const h = userData.historico[idx];
+      if (!h) return;
+
+      const nova = {
+        id: Date.now().toString(),
+        titulo: `${h.titulo} (Nova)`,
+        produtos: (h.produtos || []).map(p => ({
+          nome: p.nome,
+          qtd: p.qtd || 1,
+          valor: 0,
+          comprado: false
+        }))
+      };
+
+      userData.listas = userData.listas || [];
+      userData.listas.unshift(nova);
+      persistirDados();
+      alert(`Lista "${nova.titulo}" criada com todos os itens zerados para uma nova compra!`);
+      abrirLista(nova.id);
     }
   </script>
 </body>
