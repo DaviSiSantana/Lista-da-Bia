@@ -80,6 +80,8 @@
       background: #F7FAFC; padding: 0 14px; font-size: 15px; outline: none; transition: 0.2s;
     }
     .form-input:focus { border-color: var(--primary); background: #fff; }
+    select.form-input { cursor: pointer; }
+
     .btn-main {
       width: 100%; height: 50px; background: var(--primary); color: #fff;
       border: none; border-radius: 12px; font-size: 16px; font-weight: 700;
@@ -137,6 +139,17 @@
     .item-title { font-size: 15px; font-weight: 600; color: var(--text-main); }
     .item-sub { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
     .item-checked { text-decoration: line-through; opacity: 0.5; }
+
+    .cat-badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      color: #4A5568;
+      background: #EDF2F7;
+      padding: 2px 8px;
+      border-radius: 8px;
+      margin-top: 5px;
+    }
 
     .fab {
       position: absolute; bottom: 20px; right: 20px; background: #2D3748;
@@ -393,12 +406,12 @@
           <input type="text" id="refazer-nome" class="form-input" placeholder="Ex: Compras do Mês">
         </div>
         <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">
-          Todos os produtos desta compra serão incluídos na nova lista com as quantidades originais e os valores zerados.
+          Todos os produtos desta compra serão incluídos na nova lista com as categorias e quantidades originais, mas com os valores zerados.
         </p>
       </div>
     </div>
 
-    <!-- MODAL: NOVO PRODUTO -->
+    <!-- MODAL: NOVO PRODUTO COM CATEGORIA -->
     <div id="modal-novo-produto" class="modal-overlay">
       <div class="modal-body">
         <div class="modal-header">
@@ -409,6 +422,22 @@
         <div class="form-group">
           <label class="form-label">Nome do Produto</label>
           <input type="text" id="np-nome" class="form-input" placeholder="Ex: Arroz 5kg">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Categoria</label>
+          <select id="np-categoria" class="form-input">
+            <option value="Mercearia 🌾">Mercearia 🌾</option>
+            <option value="Hortifrúti 🍎">Hortifrúti 🍎</option>
+            <option value="Carnes & Frios 🥩">Carnes & Frios 🥩</option>
+            <option value="Laticínios & Ovos 🧀">Laticínios & Ovos 🧀</option>
+            <option value="Padaria 🍞">Padaria 🍞</option>
+            <option value="Bebidas 🥤">Bebidas 🥤</option>
+            <option value="Limpeza 🧹">Limpeza 🧹</option>
+            <option value="Higiene Pessoal 🧴">Higiene Pessoal 🧴</option>
+            <option value="Congelados 🧊">Congelados 🧊</option>
+            <option value="Doces & Snacks 🍫">Doces & Snacks 🍫</option>
+            <option value="Outros 📦" selected>Outros 📦</option>
+          </select>
         </div>
         <div style="display: flex; gap: 10px;">
           <div class="form-group" style="flex: 1;">
@@ -423,13 +452,29 @@
       </div>
     </div>
 
-    <!-- MODAL: EDITAR PRODUTO -->
+    <!-- MODAL: EDITAR PRODUTO COM CATEGORIA -->
     <div id="modal-editar-produto" class="modal-overlay">
       <div class="modal-body">
         <div class="modal-header">
           <button class="btn-icon" style="color: var(--red);" onclick="deletarProduto()">Excluir</button>
           <strong id="edit-prod-titulo">Editar Item</strong>
           <button class="btn-icon" style="color: var(--primary); font-weight: 700;" onclick="salvarEdicaoProduto()">Confirmar</button>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Categoria</label>
+          <select id="edit-categoria" class="form-input">
+            <option value="Mercearia 🌾">Mercearia 🌾</option>
+            <option value="Hortifrúti 🍎">Hortifrúti 🍎</option>
+            <option value="Carnes & Frios 🥩">Carnes & Frios 🥩</option>
+            <option value="Laticínios & Ovos 🧀">Laticínios & Ovos 🧀</option>
+            <option value="Padaria 🍞">Padaria 🍞</option>
+            <option value="Bebidas 🥤">Bebidas 🥤</option>
+            <option value="Limpeza 🧹">Limpeza 🧹</option>
+            <option value="Higiene Pessoal 🧴">Higiene Pessoal 🧴</option>
+            <option value="Congelados 🧊">Congelados 🧊</option>
+            <option value="Doces & Snacks 🍫">Doces & Snacks 🍫</option>
+            <option value="Outros 📦">Outros 📦</option>
+          </select>
         </div>
         <div class="form-group">
           <label class="form-label">Quantidade</label>
@@ -694,6 +739,7 @@
             <div>
               <div class="item-title ${p.comprado ? 'item-checked' : ''}">${p.nome}</div>
               <div class="item-sub">${p.qtd}x R$ ${p.valor.toFixed(2).replace('.', ',')}</div>
+              <span class="cat-badge">${p.categoria || 'Outros 📦'}</span>
             </div>
             <div style="font-weight:700;">R$ ${(p.qtd * p.valor).toFixed(2).replace('.', ',')}</div>
           </div>
@@ -707,13 +753,14 @@
 
     function salvarNovoProduto() {
       const nome = document.getElementById('np-nome').value.trim();
+      const categoria = document.getElementById('np-categoria').value;
       const qtd = parseInt(document.getElementById('np-qtd').value) || 1;
       const valor = parseFloat(document.getElementById('np-valor').value) || 0;
       if (!nome) return;
 
       const lista = userData.listas.find(l => l.id === listaAtualId);
       lista.produtos = lista.produtos || [];
-      lista.produtos.push({ nome, qtd, valor, comprado: valor > 0 });
+      lista.produtos.push({ nome, categoria, qtd, valor, comprado: valor > 0 });
       persistirDados();
       document.getElementById('np-nome').value = '';
       document.getElementById('np-valor').value = '';
@@ -726,6 +773,7 @@
       const lista = userData.listas.find(l => l.id === listaAtualId);
       const p = lista.produtos[idx];
       document.getElementById('edit-prod-titulo').innerText = p.nome;
+      document.getElementById('edit-categoria').value = p.categoria || 'Outros 📦';
       document.getElementById('edit-qtd').value = p.qtd;
       document.getElementById('edit-valor').value = p.valor || '';
       document.getElementById('modal-editar-produto').classList.add('active');
@@ -733,8 +781,11 @@
 
     function salvarEdicaoProduto() {
       const lista = userData.listas.find(l => l.id === listaAtualId);
+      const categoria = document.getElementById('edit-categoria').value;
       const qtd = parseInt(document.getElementById('edit-qtd').value) || 1;
       const valor = parseFloat(document.getElementById('edit-valor').value) || 0;
+
+      lista.produtos[produtoEmEdicao].categoria = categoria;
       lista.produtos[produtoEmEdicao].qtd = qtd;
       lista.produtos[produtoEmEdicao].valor = valor;
       lista.produtos[produtoEmEdicao].comprado = valor > 0;
@@ -751,12 +802,10 @@
       renderizarProdutosDaLista();
     }
 
-    // Finalizar com gravação de data e hora
     function finalizarListaAtual() {
       const listaIdx = userData.listas.findIndex(l => l.id === listaAtualId);
       const lista = userData.listas[listaIdx];
 
-      // Gravar data e hora da finalização
       const agora = new Date();
       const dataStr = agora.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
       const horaStr = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
@@ -804,7 +853,6 @@
       renderizarDespensa();
     }
 
-    // Histórico exibindo data formatada
     function renderizarHistorico() {
       const container = document.getElementById('historico-container');
       if (!userData.historico || userData.historico.length === 0) {
@@ -839,7 +887,6 @@
       }).join('');
     }
 
-    // Modal para renomear e refazer
     function iniciarRefazerCompra(idx) {
       historicoIdxParaRefazer = idx;
       const h = userData.historico[idx];
@@ -860,6 +907,7 @@
         titulo: nomeCustomizado,
         produtos: (h.produtos || []).map(p => ({
           nome: p.nome,
+          categoria: p.categoria || 'Outros 📦',
           qtd: p.qtd || 1,
           valor: 0,
           comprado: false
