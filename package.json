@@ -1,0 +1,30 @@
+{
+  "name": "lista-da-bia",
+  "version": "1.0.0",
+  "homepage": "https://DaviSiSantana.github.io/Lista-da-Bia",
+  "main": "index.js",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "export:web": "npx expo export -p web",
+    "predeploy": "npm run export:web",
+    "deploy": "gh-pages -d dist"
+  },
+  "dependencies": {
+    "@expo/vector-icons": "^15.0.2",
+    "@react-native-async-storage/async-storage": "2.2.0",
+    "expo": "~55.0.32",
+    "expo-status-bar": "~55.0.6",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "react-native": "0.83.10",
+    "react-native-paper": "4.9.2",
+    "react-native-web": "~0.19.10"
+  },
+  "devDependencies": {
+    "gh-pages": "^6.1.1"
+  },
+  "private": true
+}
